@@ -1,6 +1,6 @@
-import React, {useEffect, useState} from 'react';
+import React, { useRef } from "react";
+import {Animated, Dimensions, PanResponder} from "react-native";
 import styled from "styled-components/native";
-import {Animated, TouchableOpacity} from "react-native";
 
 const Container = styled.View`
   flex: 1;
@@ -12,28 +12,54 @@ const Box = styled.View`
   width: 200px;
   height: 200px;
 `;
-
 const AnimatedBox = Animated.createAnimatedComponent(Box);
 
+const { width:SCREEN_WIDTH, height:SCREEN_HEIGHT } = Dimensions.get("window");
+
 export default function App() {
-  const Y = new Animated.Value(0);
-  const moveUp = () => {
-    Animated.spring(Y, {
-      toValue: 200,
-      tension: 5000,
-      friction: 1,
-      useNativeDriver: true,
-    }).start();
-  };
-  Y.addListener(() => console.log(Y))
+  const POSITION = useRef(
+    new Animated.ValueXY({
+      x: 0,
+      y: 0,
+    })
+  ).current;
+
+  const borderRadius = POSITION.y.interpolate({
+    inputRange: [-300, 300],
+    outputRange: [100, 0],
+  });
+  const bgColor = POSITION.y.interpolate({
+    inputRange: [-300, 300],
+    outputRange: ["rgb(255, 99, 71)", "rgb(71, 166, 255)"],
+  });
+  const panResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onPanResponderMove: (_, {dx, dy}) => {
+      POSITION.setValue({
+        x: dx, y: dy
+      });
+    },
+    onPanResponderRelease: () => {
+      Animated.spring(POSITION, {
+        toValue: {x:0, y:0},
+        useNativeDriver: false,
+        bounciness: 10,
+      }).start();
+    }
+  })).current;
+  console.log(panResponder);
   return (
     <Container>
-      <TouchableOpacity onPress={moveUp} >
-      <AnimatedBox style={{
-        transform: [{translateY: Y}],
-        }}
-      />
-      </TouchableOpacity>
+        <AnimatedBox
+          {...panResponder.panHandlers}
+          style={{
+            borderRadius,
+            backgroundColor: bgColor,
+            transform: [
+              ...POSITION.getTranslateTransform(),
+            ],
+          }}
+        />
     </Container>
-  )
-};
+  );
+}
