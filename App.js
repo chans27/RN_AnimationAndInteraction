@@ -34,20 +34,22 @@ export default function App() {
   });
   const panResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => true,
-    onPanResponderMove: (_, {dx, dy}) => {
-      POSITION.setValue({
-        x: dx, y: dy
+    onPanResponderGrant: () => {
+      POSITION.setOffset({
+        x: POSITION.x._value, y: POSITION.y._value
       });
     },
+    onPanResponderMove: (_, {dx, dy}) => {
+      POSITION.setValue({
+        x: dx,
+        y: dy,
+      })
+    },
     onPanResponderRelease: () => {
-      Animated.spring(POSITION, {
-        toValue: {x:0, y:0},
-        useNativeDriver: false,
-        bounciness: 10,
-      }).start();
+      POSITION.flattenOffset();
     }
   })).current;
-  console.log(panResponder);
+
   return (
     <Container>
         <AnimatedBox
